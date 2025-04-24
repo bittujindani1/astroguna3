@@ -2,52 +2,70 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return {
+      statusCode: 405,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Method Not Allowed' })
+    };
   }
 
   try {
     const { chartData, userQuestion } = JSON.parse(event.body);
+    
+    if (!chartData || !chartData.planetaryHealth) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Invalid chart data provided' })
+      };
+    }
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
     const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    
-    const prompt = `You are an expert medical astrologer...`; // Your full prompt here
-    
+
+    const prompt = `
+      You are an expert medical astrologer analyzing this birth chart:
+      
+      Planetary Positions:
+      ${JSON.stringify(chartData.planetaryHealth, null, 2)}
+      
+      Current Dasha Period:
+      ${JSON.stringify(chartData.dashaPeriod, null, 2)}
+      
+      House Analysis:
+      ${JSON.stringify(chartData.houseAnalysis, null, 2)}
+      
+      User Question: ${userQuestion || 'Provide a general health analysis'}
+      
+      Please provide a detailed health analysis focusing on:
+      - Vulnerable body systems
+      - Potential health risks
+      - Preventive measures
+      - Astrological remedies
+      - Lifestyle suggestions
+      
+      Format your response in HTML with proper headings and bullet points.
+    `;
+
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ html: formatAIResponse(text) })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        html: `<div class="ai-message ai-response">${text}</div>`
+      })
     };
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        error: 'Failed to generate analysis',
+        details: error.message 
+      })
     };
   }
 };
-
-function formatAIResponse(text) {
-  // Format the response with HTML
-  const sections = text.split('\n\n');
-  let htmlResponse = "<div class='ai-message ai-response collapsible'><h3>AI Analysis</h3><div class='collapsible-content'>";
-  
-  sections.forEach(section => {
-    if (section.startsWith('1. Key Health Characteristics')) {
-      htmlResponse += `<h4>Key Health Characteristics</h4><ul>`;
-      const points = section.split('\n').slice(1);
-      points.forEach(point => {
-        if (point.trim()) {
-          htmlResponse += `<li>${point.replace(/^- /, '').trim()}</li>`;
-        }
-      });
-      htmlResponse += `</ul>`;
-    } 
-    // ... rest of your formatting logic ...
-  });
-  
-  htmlResponse += "</div></div>";
-  return htmlResponse;
-}
