@@ -49,73 +49,70 @@ $(document).ready(function() {
 
   // Form submission handler
   $('#birthChartForm').submit(async function(e) {
-    e.preventDefault();
-    
-    if(!$('#lat').val() || !$('#lon').val()) {
-      $('#errorMessage').text('Please select a valid location from the suggestions').show();
-      return;
+  e.preventDefault();
+  if (!$('#lat').val() || !$('#lon').val()) {
+    $('#errorMessage').text('Please select a valid location from the suggestions').show();
+    return;
+  }
+
+  $('#loadingIndicator').show();
+  $('#reportContainer').hide();
+  $('#errorMessage').hide();
+
+  try {
+    const formData = {
+      day: $('input[name="day"]').val(),
+      month: $('input[name="month"]').val(),
+      year: $('input[name="year"]').val(),
+      hour: $('input[name="hour"]').val(),
+      min: $('input[name="min"]').val(),
+      lat: $('#lat').val(),
+      lon: $('#lon').val(),
+      tzone: $('#tzone').val()
+    };
+
+    const [chartResponse, planetsResponse, dashaResponse] = await Promise.all([
+      fetch('/.netlify/functions/generateChart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      }),
+      fetch('/.netlify/functions/getPlanets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      }),
+      fetch('/.netlify/functions/getDasha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+    ]);
+
+    if (!chartResponse.ok || !planetsResponse.ok || !dashaResponse.ok) {
+      throw new Error('Failed to fetch astrology data');
     }
-    
-    $('#loadingIndicator').show();
-    $('#reportContainer').hide();
-    $('#errorMessage').hide();
-    
-    try {
-      const formData = {
-        day: $('input[name="day"]').val(),
-        month: $('input[name="month"]').val(),
-        year: $('input[name="year"]').val(),
-        hour: $('input[name="hour"]').val(),
-        min: $('input[name="min"]').val(),
-        lat: $('#lat').val(),
-        lon: $('#lon').val(),
-        tzone: $('#tzone').val()
-      };
 
-      // Make API calls sequentially
-      const [chartResponse, planetsResponse, dashaResponse] = await Promise.all([
-        fetch('/.netlify/functions/generateChart', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        }),
-        fetch('/.netlify/functions/getPlanets', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        }),
-        fetch('/.netlify/functions/getDasha', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        })
-      ]);
+    const [chartData, planetsData, dashaData] = await Promise.all([
+      chartResponse.json(),
+      planetsResponse.json(),
+      dashaResponse.json()
+    ]);
 
-      if (!chartResponse.ok || !planetsResponse.ok || !dashaResponse.ok) {
-        throw new Error('Failed to fetch astrology data');
-      }
+    // Process responses
+    $('#d1Chart').html(chartData.svg || '<p>No chart available</p>');
+    generatePlanetaryHealthAnalysis(planetsData);
+    generateHouseHealthAnalysis(planetsData);
+    generateDashaHealthAnalysis(dashaData);
 
-      const [chartData, planetsData, dashaData] = await Promise.all([
-        chartResponse.json(),
-        planetsResponse.json(),
-        dashaResponse.json()
-      ]);
-
-      // Process responses
-      $('#d1Chart').html(chartData.svg || '<p>No chart available</p>');
-      generatePlanetaryHealthAnalysis(planetsData);
-      generateHouseHealthAnalysis(planetsData);
-      generateDashaHealthAnalysis(dashaData);
-      
-      $('#loadingIndicator').hide();
-      $('#reportContainer').show();
-    } catch (error) {
-      console.error('Error:', error);
-      $('#errorMessage').text('Error generating report: ' + error.message).show();
-      $('#loadingIndicator').hide();
-    }
-  });
-
+    $('#loadingIndicator').hide();
+    $('#reportContainer').show();
+  } catch (error) {
+    console.error('Error:', error);
+    $('#errorMessage').text(`Error generating report: ${error.message}`).show();
+    $('#loadingIndicator').hide();
+  }
+});
   // AI Chat functionality
   $('#askAIButton').click(function() {
     const question = $('#aiQuestion').val().trim();

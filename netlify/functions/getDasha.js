@@ -11,6 +11,16 @@ exports.handler = async function(event, context) {
 
   try {
     const data = JSON.parse(event.body);
+
+    // Validate input data
+    if (!data.day || !data.month || !data.year || !data.hour || !data.min || !data.lat || !data.lon || !data.tzone) {
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Missing required fields in request body' })
+      };
+    }
+
     const response = await axios.post('https://json.astrologyapi.com/v1/current_vdasha', data, {
       headers: {
         'Content-Type': 'application/json',
@@ -24,6 +34,7 @@ exports.handler = async function(event, context) {
       body: JSON.stringify(response.data)
     };
   } catch (error) {
+    console.error('Error in getDasha:', error.message);
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
