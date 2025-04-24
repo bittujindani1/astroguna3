@@ -35,6 +35,7 @@ exports.handler = async function(event, context) {
     };
   } catch (error) {
     console.error('Error in generateChart:', error.message);
+    console.error('Request payload:', event.body);
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },

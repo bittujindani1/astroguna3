@@ -90,7 +90,7 @@ $(document).ready(function() {
     ]);
 
     if (!chartResponse.ok || !planetsResponse.ok || !dashaResponse.ok) {
-      throw new Error('Failed to fetch astrology data');
+      throw new Error(`API Error: ${chartResponse.status} - ${planetsResponse.status} - ${dashaResponse.status}`);
     }
 
     const [chartData, planetsData, dashaData] = await Promise.all([
