@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Astrology Report and CHAT</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+</head>
+<body>
+<div class="astrology-dashboard">
+  <div class="dashboard-container">
+    <!-- Left side - Form and Charts -->
+    <div class="left-panel">
+      <h1>Medical Astrology Report and CHAT</h1>
+      
+      <div class="birth-chart-form">
+        <form id="birthChartForm">
+          <div class="form-row">
+            <div class="form-section">
+              <h3>Date of Birth</h3>
+              <div class="input-group">
+                <input type="number" name="day" placeholder="Day" min="1" max="31" required>
+                <input type="number" name="month" placeholder="Month" min="1" max="12" required>
+                <input type="number" name="year" placeholder="Year" min="1900" max="2100" required>
+              </div>
+            </div>
+            
+            <div class="form-section">
+              <h3>Time of Birth</h3>
+              <div class="input-group">
+                <input type="number" name="hour" placeholder="Hour (24h)" min="0" max="23" required>
+                <input type="number" name="min" placeholder="Minute" min="0" max="59" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3>Place of Birth</h3>
+            <input type="text" name="place" placeholder="Start typing city..." id="place" required autocomplete="off">
+            <div class="coordinates-display">
+              <span id="coordinates">Lat/Lon: Not selected</span>
+              <span id="timezone">Timezone: Not selected</span>
+            </div>
+            <input type="hidden" name="lat" id="lat">
+            <input type="hidden" name="lon" id="lon">
+            <input type="hidden" name="tzone" id="tzone">
+          </div>
+
+          <button type="submit" class="generate-btn">Generate Medical Report</button>
+        </form>
+      </div>
+
+      <div id="loadingIndicator" style="display:none;">
+        <div class="spinner"></div>
+        <p>Generating your medical astrology report...</p>
+      </div>
+
+      <div id="reportContainer" style="display:none;">
+        <!-- Charts Row - Original D1 Chart -->
+        <div class="charts-row">
+          <div class="chart-section">
+            <h2>Birth Chart (D1)</h2>
+            <div id="d1Chart" class="chart-display"></div>
+          </div>
+        </div>
+        
+        <!-- Planetary Positions -->
+        <div class="data-section planetary-positions">
+          <h2>Planetary Positions & Health Analysis</h2>
+          <div id="planetPositions" class="data-display">
+            <table class="planet-table">
+              <thead>
+                <tr>
+                  <th>Planet</th>
+                  <th>Sign (Rashi)</th>
+                  <th>Degree</th>
+                  <th>House</th>
+                  <th>Status</th>
+                  <th>Body Parts</th>
+                  <th>Health Impact</th>
+                  <th>Remedies</th>
+                </tr>
+              </thead>
+              <tbody id="planetPositionsBody"></tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Current Dasha Analysis -->
+        <div class="data-section directional-analysis">
+          <h2>Current Dasha Health Analysis</h2>
+          <div id="dashaAnalysis" class="data-display">
+            <table class="direction-table">
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Planet</th>
+                  <th>Health Influence</th>
+                  <th>Vulnerable Areas</th>
+                  <th>Recommendations</th>
+                </tr>
+              </thead>
+              <tbody id="dashaAnalysisBody"></tbody>
+            </table>
+          </div>
+        </div>
+        
+        <!-- Enhanced House-wise Health Analysis -->
+        <div class="data-section vimshottari-dasha">
+          <h2>House-wise Health Analysis</h2>
+          <div id="houseAnalysis" class="data-display">
+            <table class="house-table">
+              <thead>
+                <tr>
+                  <th>House</th>
+                  <th>Sanskrit Name</th>
+                  <th>Rashi</th>
+                  <th>Body Parts (House+Rashi)</th>
+                  <th>Planets</th>
+                  <th>Health Status</th>
+                  <th>Potential Diseases (House+Rashi+Planets)</th>
+                  <th>Preventive Care</th>
+                </tr>
+              </thead>
+              <tbody id="houseAnalysisBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="errorMessage" class="error-message" style="display:none;"></div>
+    </div>
+
+    <!-- Right side - AI Analysis -->
+    <div class="right-panel">
+      <div class="data-section ai-analysis">
+        <h2>Medical Astrology AI</h2>
+        <div class="ai-chat-container">
+          <div class="ai-response" id="aiResponse">
+            <div class="ai-message ai-intro">
+              <p>Welcome to your medical astrology assistant. Once you generate your birth chart, I can provide insights on (आप हिंदी में भी अपने प्रश्न पूछ सकते है ):</p>
+              <ul>
+                <li>Potential health vulnerabilities</li>
+                <li>Mujhe konsi bimari ho sakti hai</li>
+                <li>Body systems to focus on</li>
+                <li>Current dasha period health influences</li>
+                <li>Preventive measures and remedies</li>
+              </ul>
+            </div>
+          </div>
+          <div id="aiLoading" style="display:none;">
+            <div class="spinner small"></div>
+            <p>Generating medical analysis...</p>
+          </div>
+          <div class="ai-input-container">
+            <input type="text" id="aiQuestion" placeholder="Ask about health concerns (e.g. digestion, heart)">
+            <button id="askAIButton" class="generate-btn small">Ask AI</button>
+          </div>
+          <div class="quick-questions">
+            <p>Try asking:</p>
+            <div class="quick-question" data-question="What are my most vulnerable body systems?">Vulnerable areas</div>
+            <div class="quick-question" data-question="What preventive care should I focus on?">Preventive care</div>
+            <div class="quick-question" data-question="What remedies would help my health?">Health remedies</div>
+            <div class="quick-question" data-question="How does my current dasha affect my health?">Dasha health</div>
+          </div>
+          <button id="generateFullAnalysis" class="generate-btn small secondary">Generate Full Health Analysis</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
