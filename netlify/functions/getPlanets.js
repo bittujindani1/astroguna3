@@ -1,28 +1,28 @@
 const axios = require('axios');
 
 exports.handler = async function(event, context) {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
-  }
+  if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
 
   try {
     const data = JSON.parse(event.body);
     
     const requestData = {
-      day: String(data.day).padStart(2, '0'),
-      month: String(data.month).padStart(2, '0'),
-      year: String(data.year),
-      hour: String(data.hour).padStart(2, '0'),
-      min: String(data.min).padStart(2, '0'),
-      lat: String(data.lat),
-      lon: String(data.lon),
-      tzone: String(data.tzone)
+      day: parseInt(data.day, 10),
+      month: parseInt(data.month, 10),
+      year: parseInt(data.year, 10),
+      hour: parseInt(data.hour, 10),
+      min: parseInt(data.min, 10),
+      lat: parseFloat(data.lat),
+      lon: parseFloat(data.lon),
+      tzone: parseFloat(data.tzone)
     };
 
+    const authHeader = 'Basic ' + Buffer.from(process.env.ASTROLOGY_API_AUTH).toString('base64');
+    
     const response = await axios.post('https://json.astrologyapi.com/v1/planets', requestData, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Basic ' + Buffer.from(process.env.ASTROLOGY_API_AUTH).toString('base64')
+        'Authorization': authHeader
       }
     });
 
@@ -32,8 +32,8 @@ exports.handler = async function(event, context) {
     return { 
       statusCode: 500,
       body: JSON.stringify({ 
-        error: 'Failed to get planetary data',
-        details: error.response?.data || error.message 
+        error: 'Failed to get planets',
+        details: error.response?.data || error.stack 
       })
     };
   }
