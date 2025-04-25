@@ -2,43 +2,40 @@ const axios = require('axios');
 
 exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Method Not Allowed' })
-    };
+    return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   try {
     const data = JSON.parse(event.body);
+    
+    // Validate and parse numbers
+    const requestData = {
+      day: parseInt(data.day, 10),
+      month: parseInt(data.month, 10),
+      year: parseInt(data.year, 10),
+      hour: parseInt(data.hour, 10),
+      min: parseInt(data.min, 10),
+      lat: parseFloat(data.lat),
+      lon: parseFloat(data.lon),
+      tzone: parseFloat(data.tzone)
+    };
 
-    // Validate input data
-    if (!data.day || !data.month || !data.year || !data.hour || !data.min || !data.lat || !data.lon || !data.tzone) {
-      return {
-        statusCode: 400,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Missing required fields in request body' })
-      };
-    }
-
-    const response = await axios.post('https://json.astrologyapi.com/v1/planets', data, {
+    const response = await axios.post('https://json.astrologyapi.com/v1/planets', requestData, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Basic ' + Buffer.from(process.env.ASTROLOGY_API_AUTH).toString('base64')
       }
     });
 
-    return {
-      statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(response.data)
-    };
+    return { statusCode: 200, body: JSON.stringify(response.data) };
   } catch (error) {
-    console.error('Error in getPlanets:', error.message);
-    return {
+    console.error('Error:', error.response?.data || error.message);
+    return { 
       statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ 
+        error: 'Failed to get planetary data',
+        details: error.response?.data || error.message 
+      })
     };
   }
 };

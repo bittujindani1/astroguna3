@@ -23,7 +23,7 @@ $(document).ready(function() {
               value: item.display_name,
               lat: item.lat,
               lon: item.lon,
-              tzone: isIndianCity ? 5.5 : (parseFloat(item.lon) / 15).toFixed(1),
+              tzone: isIndianCity ? 5.5 : parseFloat(item.lon) / 15,
               isIndian: isIndianCity
             };
           }));
